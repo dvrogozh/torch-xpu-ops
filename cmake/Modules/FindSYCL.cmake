@@ -75,7 +75,7 @@ endif()
 option(SYCL_HOST_COMPILATION_CXX "Generated file extension" ON)
 
 # SYCL_VERBOSE_BUILD
-option(SYCL_VERBOSE_BUILD "Print out the commands run while compiling the SYCL source file.  With the Makefile generator this defaults to VERBOSE variable specified on the command line, but can be forced on with this option." OFF)
+option(SYCL_VERBOSE_BUILD "Print out the commands run while compiling the SYCL source file.  With the Makefile generator this defaults to VERBOSE variable specified on the command line, but can be forced on with this option." ON)
 
 macro(SYCL_INCLUDE_EXTERNAL_DEPENDENCIES dependency_file)
   list(APPEND SYCL_EXTERNAL_DEPEND ${dependency_file})
@@ -409,7 +409,7 @@ macro(SYCL_LINK_DEVICE_OBJECTS output_file sycl_target)
       COMMAND ${SYCL_EXECUTABLE}
       ${SYCL_device_link_flags}
       -fsycl-link ${object_files}
-      -Xs "\"${SYCL_OFFLINE_COMPILER_FLAGS}\""
+      -Xs "${SYCL_OFFLINE_COMPILER_FLAGS}"
       -o ${output_file}
       COMMENT "Building SYCL device link file ${output_file_relative_path}"
       )

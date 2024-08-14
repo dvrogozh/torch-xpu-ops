@@ -5,6 +5,7 @@
 #include <ATen/native/xpu/sycl/Reduce.h>
 #include <ATen/native/xpu/sycl/SharedReduceOps.h>
 
+
 namespace at {
 namespace native {
 namespace xpu {
