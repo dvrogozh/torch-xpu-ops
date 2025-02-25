@@ -48,6 +48,43 @@ permissions: read-all
 
 jobs:
   Torch-XPU-Transformers-Tests:
+    strategy:
+      matrix:
+        test: [ 'tests_backbone', 'tests_py', 'tests_generation', 'tests_models', 'tests_pipelines', 'tests_trainer', 'tests_utils' ]
+        include:
+          - test: 'tests_backbone'
+            files: 'tests'
+            # https://github.com/huggingface/transformers/issues/36267
+            ignore: 'tests/models/marian/test_modeling_marian.py'
+            k: "backbone"
+
+          - test: 'tests_py'
+            files: 'tests/*.py'
+
+          - test: 'tests_generation'
+            files: 'tests/generation'
+            # "torch.distributed.*" not yet supported by XPU
+            k: "not TestFSDPGeneration"
+
+          - test: 'tests_models'
+            files: 'tests/models'
+            # https://github.com/huggingface/transformers/issues/36267
+            ignore: 'tests/models/marian/test_modeling_marian.py'
+            # https://github.com/pytorch/pytorch/issues/140965 (aten::_linalg_eigvals)
+            k: "not test_resize_embeddings_untied and not test_resize_tokens_embeddings"
+
+          - test: 'tests_trainer'
+            files: 'tests/trainer'
+            # * Some ray tests hang, reason unknown
+            # * torch.distributed.* not yet supported by XPU
+            k: "not ray and not TestTrainerDistributed and not TestTrainerDistributedXPU and  not TestFSDPTrainer"
+
+          - test: 'tests_utils'
+            files: 'tests/utils'
+            # https://github.com/huggingface/transformers/issues/36334
+            ignore: 'tests/utils/test_import_utils.py'
+            # Network proxy connection issue, reason unknown
+            k: "not test_load_img_url_timeout"
     runs-on: ${{ inputs.runner != '' && inputs.runner || 'linux.idc.xpu' }}
     env:
       HF_HOME: ${{ github.workspace }}/.hf_home
@@ -138,94 +175,21 @@ jobs:
       - name: Clean HF home directory and cache
         run: |
           rm -rf ${{ env.HF_HOME }}
-      - name: Run -k backbone tests
-        env:
-          TEST_CASE: 'tests_backbone'
+      - name: Run tests
         run: |
           source activate $CONDA_ENV_NAME
           cd transformers
-          # Excluding tests due to:
-          # * https://github.com/huggingface/transformers/issues/36267 (marian tests)
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml \
-            --ignore=tests/models/marian/test_modeling_marian.py \
-            -k backbone tests || \
-            (echo "FAILED_CASES=$FAILED_CASES,$TEST_CASE" >> $GITHUB_ENV)
-      - name: Run tests/*.py
-        env:
-          TEST_CASE: 'tests_py'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml tests/*.py || true
-      - name: Run tests/generation
-        env:
-          TEST_CASE: 'tests_generation'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          # Excluding tests due to:
-          # * torch.distributed.* not yet supported by XPU
-          pattern="not TestFSDPGeneration"
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml tests/generation -k "$pattern" || true
-      - name: Run tests/models
-        env:
-          TEST_CASE: 'tests_models'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          # Excluding tests due to:
-          # * https://github.com/pytorch/pytorch/issues/140965 (aten::_linalg_eigvals)
-          # * https://github.com/huggingface/transformers/issues/36267 (marian tests)
-          pattern=" \
-            not test_resize_embeddings_untied and \
-            not test_resize_tokens_embeddings"
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml \
-            -k "$pattern" --ignore=tests/models/marian/test_modeling_marian.py \
-            tests/models || true
-      - name: Run tests/pipelines
-        env:
-          TEST_CASE: 'tests_pipelines'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          # Some tests are known to fail w/o clear pattern
-          # TODO: drop ||true after triage and fixes
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml tests/pipelines || true
-      - name: Run tests/trainer
-        env:
-          TEST_CASE: 'tests_trainer'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          # Excluding tests due to:
-          # * Some ray tests hang, reason unknown
-          # * torch.distributed.* not yet supported by XPU
-          pattern=" \
-            not ray and \
-            not TestTrainerDistributed and \
-            not TestTrainerDistributedXPU and \
-            not TestFSDPTrainer"
-          python3 -m pytest -rsf --make-reports=$TEST_CASE tests/trainer --junit-xml=reports/$TEST_CASE.xml -k "$pattern" || \
-            (echo "FAILED_CASES=$FAILED_CASES,$TEST_CASE" >> $GITHUB_ENV)
-      - name: Run tests/utils
-        env:
-          TEST_CASE: 'tests_utils'
-        run: |
-          source activate $CONDA_ENV_NAME
-          cd transformers
-          # Excluding tests due to:
-          # * Network proxy connection issue, reason unknown
-          pattern="not test_load_img_url_timeout"
-          # 'tests/utils/test_import_utils.py' invalidates state of the test engine causing
-          # next tests to fail. See: https://github.com/huggingface/transformers/issues/36267
-          python3 -m pytest -rsf --make-reports=$TEST_CASE --junit-xml=reports/$TEST_CASE.xml \
-            -k "$pattern" --ignore=tests/utils/test_import_utils.py \
-            tests/utils || (echo "FAILED_CASES=$FAILED_CASES,$TEST_CASE" >> $GITHUB_ENV)
+          if [ -n "${{ matrix.ignore }}" ]; then
+            ignore="--ignore=${{ matrix.ignore }}"
+          fi
+          if [ -n "${{ matrix.k }}" ]; then
+            pattern="-k \"${{ matrix.k }}\""
+          fi
+          test_case="${{ matrix.test }}"
+          python3 -m pytest -rsf --make-reports=$test_case --junit-xml=reports/$test_case.xml \
+            $ignore $pattern ${{ matrix.files }} || true
       - name: Check for errors in tests
         run: |
-          FAILED_CASES=$(echo $FAILED_CASES | sed 's/^,//')
-          echo "Failed cases: [$(echo $FAILED_CASES | sed 's/,/, /g')]"
-          test -z "$FAILED_CASES"
           source activate $CONDA_ENV_NAME
           python3 torch-xpu-ops/.github/scripts/check-transformers.py transformers/reports/*.xml
       - name: Clean HF home directory and cache
@@ -233,6 +197,15 @@ jobs:
         run: |
           du -sh ${{ env.HF_HOME }} || true
           rm -rf ${{ env.HF_HOME }}
+      - name: Upload Test log
+        if: ${{ ! cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Torch-XPU-Transformers-Log-${{ github.event.pull_request.number || github.sha }}-${{ matrix.test }}
+          path: |
+            ${{ github.workspace }}/transformers/reports
+            ${{ github.workspace }}/transformers/tests_log
+
       - name: Print results table
         if: ${{ ! cancelled() }}
         run: |
@@ -333,7 +306,7 @@ jobs:
         if: ${{ ! cancelled() }}
         uses: actions/upload-artifact@v4
         with:
-          name: Torch-XPU-Transformers-Log-${{ github.event.pull_request.number || github.sha }}
+          name: Torch-XPU-Transformers-Log-${{ github.event.pull_request.number || github.sha }}-${{ matrix.step }}
           path: | 
             ${{ github.workspace }}/transformers/reports
             ${{ github.workspace }}/transformers/tests_log
