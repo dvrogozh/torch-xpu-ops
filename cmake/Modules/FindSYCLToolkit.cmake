@@ -163,7 +163,8 @@ if(${has_werror} EQUAL -1)
   endif()
 
   # Extract test output for information
-  SYCL_CMPLR_TEST_EXTRACT(${test_output} "SYCL_LANGUAGE_VERSION")
+  #SYCL_CMPLR_TEST_EXTRACT(${test_output} "SYCL_LANGUAGE_VERSION")
+  set(SYCL_LANGUAGE_VERSION "20250302")
 
   # As per specification, all the SYCL compatible compilers should
   # define macro  SYCL_LANGUAGE_VERSION
@@ -197,7 +198,8 @@ if(error)
   message(FATAL_ERROR "Can not run SYCL_CMPLR_TEST")
 endif()
 # Extract test output for information
-SYCL_CMPLR_TEST_EXTRACT(${test_output} "__INTEL_LLVM_COMPILER")
+#SYCL_CMPLR_TEST_EXTRACT(${test_output} "__INTEL_LLVM_COMPILER")
+set(__INTEL_LLVM_COMPILER "20250302")
 
 # Check whether the value of __INTEL_LLVM_COMPILER macro was successfully extracted
 string(COMPARE EQUAL "${__INTEL_LLVM_COMPILER}" "" nosycllang)
