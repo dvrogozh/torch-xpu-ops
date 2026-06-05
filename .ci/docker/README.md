@@ -1,7 +1,6 @@
 # Docker images for GitHub CI and CD
 
-This directory contains everything needed to build the Docker images
-that are used in our CI tests.
+This directory contains everything needed to build the Docker images that are used in our CI tests.
 
 ## Docker CI builds
 
@@ -9,9 +8,18 @@ that are used in our CI tests.
 
 ## Docker CI tests
 
-If also use this for build, need install Intel® Deep Learning Essentials,
-refer to [Intel® Deep Learning Essentials](https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit-download.html?packages=dl-essentials&dl-essentials-os=linux&dl-lin=offline)
+To build specific image for tests:
+
 ```bash
-# Build a specific image for tests
-docker build --build-arg UBUNTU_VERSION=22.04 --file ubuntu/Dockerfile --build-arg XPU_DRIVER_TYPE=LTS2  .
+docker build --build-arg UBUNTU_VERSION=22.04 --build-arg XPU_DRIVER_TYPE=LTS2 --build-arg GCC_VERSION=13 --file ubuntu/Dockerfile .
 ```
+
+Build arguments:
+
+| Option | Possible values|
+| --- | --- |
+| `UBUNTU_VERSION` | `22.04`, `24.04`, etc. |
+| `XPU_DRIVER_TYPE` | `LTS`, `LTS2`, `rolling` |
+| `GCC_VERSION` | `11`, `13`, etc. |
+
+To use image for builds, need additionally install Intel® Deep Learning Essentials. Refer to [PyTorch Prerequisites for Intel GPUs](https://www.intel.com/content/www/us/en/developer/articles/tool/pytorch-prerequisites-for-intel-gpu.html)).
