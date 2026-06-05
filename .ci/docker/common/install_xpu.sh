@@ -388,6 +388,20 @@ function install_sles() {
     log_info "SLES installation completed successfully"
 }
 
+function install_open_source() {
+    mkdir /opt/open-source && cd /opt/open-source
+
+    wget -q https://github.com/intel/llvm/releases/download/nightly-2026-06-04/sycl_linux.tar.gz
+    tar xzvf sycl_linux.tar.gz && rm -rf sycl_linux.tar.gz
+
+    # TODO: drop manual link creation once https://github.com/intel/llvm/issues/21511
+    # will be resolved
+    ln -sr bin/clang bin/dpclang
+    ln -sr bin/clang++ bin/dpclang++
+
+    log_info "Open source component installation completed successfully"
+}
+
 # Main execution
 main() {
     log_info "Starting Intel GPU driver installation"
@@ -425,6 +439,11 @@ main() {
             exit 1
             ;;
     esac
+
+    # Install open source components
+    if [ "${INSTALL_OPEN_SOURCE}" = "yes" ]; then
+        install_open_source
+    fi
 
     # Perform cleanup
     cleanup

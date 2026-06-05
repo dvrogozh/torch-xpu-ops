@@ -14,6 +14,8 @@ ARG GCC_VERSION
 ENV GCC_VERSION=${GCC_VERSION}
 ARG XPU_DRIVER_TYPE
 ENV XPU_DRIVER_TYPE=${XPU_DRIVER_TYPE}
+ARG INSTALL_OPEN_SOURCE=no
+ENV INSTALL_OPEN_SOURCE=${INSTALL_OPEN_SOURCE}
 
 # Base system updates and essential packages
 RUN --mount=type=cache,target=/var/cache/apt \

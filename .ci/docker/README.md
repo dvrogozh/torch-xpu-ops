@@ -21,5 +21,6 @@ Build arguments:
 | `UBUNTU_VERSION` | `22.04`, `24.04`, etc. |
 | `XPU_DRIVER_TYPE` | `LTS`, `LTS2`, `rolling` |
 | `GCC_VERSION` | `11`, `13`, etc. |
+| `INSTALL_OPEN_SOURCE` | `yes`, `no` |
 
 To use image for builds, need additionally install Intel® Deep Learning Essentials. Refer to [PyTorch Prerequisites for Intel GPUs](https://www.intel.com/content/www/us/en/developer/articles/tool/pytorch-prerequisites-for-intel-gpu.html)).
