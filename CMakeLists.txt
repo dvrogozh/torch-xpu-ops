@@ -79,7 +79,7 @@ if(USE_SYCLTLA)
   include(${TORCH_XPU_OPS_ROOT}/cmake/SYCLTLA.cmake)
 endif()
 
-if(BUILD_TEST)
+if(BUILD_EAGER_MODE AND BUILD_TEST)
   add_subdirectory(${TORCH_XPU_OPS_ROOT}/test/sycl ${CMAKE_BINARY_DIR}/test_sycl)
 endif()
 

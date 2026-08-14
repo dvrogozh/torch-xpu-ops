@@ -33,8 +33,8 @@ namespace at {
 
 namespace native {
 
-REGISTER_XPU_DISPATCH(complex_stub, &xpu::complex_kernel);
-REGISTER_XPU_DISPATCH(polar_stub, &xpu::polar_kernel);
+//REGISTER_XPU_DISPATCH(complex_stub, &xpu::complex_kernel);
+//REGISTER_XPU_DISPATCH(polar_stub, &xpu::polar_kernel);
 
 Tensor& eye_out_xpu(int64_t n, int64_t m, Tensor& result) {
   TORCH_CHECK(n >= 0, "n must be greater or equal to 0, got ", n);
@@ -96,6 +96,7 @@ Tensor empty_strided_xpu(
   return result;
 }
 
+#if 0
 Tensor _efficientzerotensor_xpu(
     IntArrayRef size,
     std::optional<ScalarType> dtype,
@@ -159,6 +160,7 @@ Tensor triu_indices_xpu(
           pin_memory);
   return native::xpu::triu_indices_kernel(row, col, offset, options);
 }
+#endif
 
 } // namespace native
 } // namespace at

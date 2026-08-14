@@ -29,10 +29,11 @@ DISABLE_SYCL_DEPRECATED_WARNING_END
 #include <c10/xpu/XPUStream.h>
 #include <comm/xpu_aten.h>
 
-#include <ATen/native/xpu/sycl/CopyKernel.h>
-#include <ATen/native/xpu/sycl/TransposeKernel.h>
-#include <ATen/native/xpu/sycl/UnaryComplexKernels.h>
-#include <comm/SYCLContext.h>
+//#include <ATen/native/xpu/sycl/CopyKernel.h>
+//#include <ATen/native/xpu/sycl/TransposeKernel.h>
+//#include <ATen/native/xpu/sycl/UnaryComplexKernels.h>
+//#include <comm/SYCLContext.h>
+#include <comm/Runtime.h>
 
 #include <ATen/ops/empty_like.h>
 
@@ -93,6 +94,7 @@ void memcpyAsync(
   // TORCH_XPU_USE_COPY_ENGINE (default: disabled)
   // On PVC, the copy kernel is default for better performance. Set to 1 to
   // force use of the SYCL queue copy engine instead, e.g. for benchmarking
+#ifdef SYCL_EXT_ONEAPI_DEVICE_ARCHITECTURE
   static const bool use_copy_engine =
       c10::utils::check_env("TORCH_XPU_USE_COPY_ENGINE").value_or(false);
   if (!use_copy_engine &&
@@ -101,11 +103,16 @@ void memcpyAsync(
        dev.ext_oneapi_architecture_is(
            sycl::ext::oneapi::experimental::architecture::intel_gpu_pvc_vg))) {
     copy_kernel(iter);
-  } else {
+  } else
+#endif
+  {
     auto dst = (char*)iter.data_ptr(0);
     auto src = (char*)iter.data_ptr(1);
     size_t size = iter.numel() * iter.element_size(0);
-    q.copy(src, dst, size);
+    TORCH_CHECK(false, "sycl::queue::copy is not supported");
+#if 0
+    //q.copy(src, dst, size);
+#endif
   }
 }
 
@@ -152,11 +159,15 @@ void copy_device_to_device(
 
   if (memcpy_eligible) {
     memcpyAsync(iter, copy_stream, p2p_enabled);
+#if 0
   } else if (
       same_type && same_conj && same_neg &&
       can_use_channels_last_transpose_kernel(iter)) {
     channels_last_transpose_kernel(iter);
+#endif
   } else {
+    TORCH_CHECK(false, "copy kernels are not supported");
+#if 0
     if (same_neg) {
       if (!same_conj) {
         conj_kernel(iter);
@@ -170,6 +181,7 @@ void copy_device_to_device(
         neg_kernel(iter);
       }
     }
+#endif
   }
 
   if (src_device != dst_device) {
