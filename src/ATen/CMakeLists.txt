@@ -8,10 +8,16 @@
 
 # ATen XPU sources
 
-file(GLOB xpu_native_cpp "native/xpu/*.cpp" "native/sparse/*.cpp" "native/sparse/xpu/*.cpp" "native/nested/*.cpp" "native/nested/xpu/*.cpp" "native/transformers/*.cpp" "native/quantized/*.cpp" "native/transformers/xpu/flash_attn/*.cpp")
-file(GLOB xpu_sycl "native/xpu/sycl/*.cpp" "native/sparse/xpu/sycl/*.cpp" "native/nested/xpu/sycl/*.cpp" "native/transformers/sycl/*.cpp" "native/quantized/sycl/*.cpp")
-file(GLOB xpu_sycltla "native/transformers/xpu/flash_attn/sycltla/*.cpp")
-file(GLOB xpu_sleep "xpu/Sleep.cpp")
+if(BUILD_EAGER_MODE)
+  file(GLOB xpu_native_cpp "native/xpu/*.cpp" "native/sparse/*.cpp" "native/sparse/xpu/*.cpp" "native/nested/*.cpp" "native/nested/xpu/*.cpp" "native/transformers/*.cpp" "native/quantized/*.cpp" "native/transformers/xpu/flash_attn/*.cpp")
+  file(GLOB xpu_sycl "native/xpu/sycl/*.cpp" "native/sparse/xpu/sycl/*.cpp" "native/nested/xpu/sycl/*.cpp" "native/transformers/sycl/*.cpp" "native/quantized/sycl/*.cpp")
+  file(GLOB xpu_sycltla "native/transformers/xpu/flash_attn/sycltla/*.cpp")
+  file(GLOB xpu_sleep "xpu/Sleep.cpp")
+else()
+  set(xpu_native_cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp)
+endif()
 
 if(USE_ONEMKL_XPU)
   file(GLOB xpu_mkl "native/xpu/mkl/*.cpp")
