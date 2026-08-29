@@ -108,11 +108,12 @@ macro(set_build_flags)
   # gcc ${CMAKE_HOST_FLAGS} host.cpp -o host.o
   # 4. Linkage:
   # gcc -shared host.o kernel.o device-code.o -o libxxx.so
-  list(APPEND SYCL_KERNEL_OPTIONS -fno-sycl-unnamed-lambda)
-  list(APPEND SYCL_KERNEL_OPTIONS -fno-sycl-id-queries-fit-in-int)
+  
+  #list(APPEND SYCL_KERNEL_OPTIONS -fno-sycl-unnamed-lambda)
+  #list(APPEND SYCL_KERNEL_OPTIONS -fno-sycl-id-queries-fit-in-int)
   list(APPEND SYCL_KERNEL_OPTIONS -sycl-std=2020)
-  list(APPEND SYCL_KERNEL_OPTIONS -foffload-fp32-prec-div)
-  list(APPEND SYCL_KERNEL_OPTIONS -foffload-fp32-prec-sqrt)
+  #list(APPEND SYCL_KERNEL_OPTIONS -foffload-fp32-prec-div)
+  #list(APPEND SYCL_KERNEL_OPTIONS -foffload-fp32-prec-sqrt)
 
   # SYCL defaults fast-math ON, which strips the inf/NaN our kernels check.
   # Probe the compiler for the strict-FP flag and fail if it is rejected. Keep
@@ -201,10 +202,10 @@ macro(set_build_flags)
   else()
     set(SYCL_MAX_PARALLEL_LINK_JOBS ${proc_cnt})
   endif()
-  list(APPEND SYCL_DEVICE_LINK_FLAGS -fsycl-max-parallel-link-jobs=${SYCL_MAX_PARALLEL_LINK_JOBS})
+  #list(APPEND SYCL_DEVICE_LINK_FLAGS -fsycl-max-parallel-link-jobs=${SYCL_MAX_PARALLEL_LINK_JOBS})
   list(APPEND SYCL_DEVICE_LINK_FLAGS --offload-compress)
-  list(APPEND SYCL_DEVICE_LINK_FLAGS -foffload-fp32-prec-sqrt)
-  list(APPEND SYCL_DEVICE_LINK_FLAGS -foffload-fp32-prec-div)
+  #list(APPEND SYCL_DEVICE_LINK_FLAGS -foffload-fp32-prec-sqrt)
+  #list(APPEND SYCL_DEVICE_LINK_FLAGS -foffload-fp32-prec-div)
 
   string(APPEND SYCL_OFFLINE_COMPILER_CG_OPTIONS " -options -cl-poison-unsupported-fp64-kernels")
   string(APPEND SYCL_OFFLINE_COMPILER_CG_OPTIONS " -options -cl-intel-enable-auto-large-GRF-mode")
@@ -240,7 +241,7 @@ macro(set_build_flags)
           list(APPEND SYCL_DEVICE_LINK_FLAGS -fsycl-fp64-conv-emu)
         endif()
       endif()
-      set(SYCL_TARGETS_OPTION -fsycl-targets=spir64_gen,spir64)
+      #set(SYCL_TARGETS_OPTION -fsycl-targets=spir64_gen,spir64)
       list(APPEND SYCL_KERNEL_OPTIONS ${SYCL_TARGETS_OPTION})
       list(APPEND SYCL_DEVICE_LINK_FLAGS ${SYCL_TARGETS_OPTION})
       set(SYCL_OFFLINE_COMPILER_AOT_OPTIONS "-device ${AOT_TARGETS}")

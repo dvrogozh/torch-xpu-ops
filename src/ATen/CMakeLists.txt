@@ -16,7 +16,15 @@ if(BUILD_EAGER_MODE)
 else()
   set(xpu_native_cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Copy.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp
+    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/AbsKernel.cpp
+  )
+  set(xpu_sycl
+    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Copy.cpp
+    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/AbsKernel.cpp
+  )
+
 endif()
 
 if(USE_ONEMKL_XPU)

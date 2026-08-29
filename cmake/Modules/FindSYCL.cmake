@@ -317,6 +317,8 @@ macro(SYCL_LINK_DEVICE_OBJECTS output_file sycl_target)
       set(verbose_output OFF)
     endif()
 
+    message("PPP ${SYCL_OFFLINE_COMPILER_FLAGS}")
+    message("PPP ${object_files} PPP")
     # Build the generated file and dependency file ##########################
     add_custom_command(
       OUTPUT ${output_file}
@@ -324,8 +326,10 @@ macro(SYCL_LINK_DEVICE_OBJECTS output_file sycl_target)
       COMMAND ${CMAKE_COMMAND} -E make_directory "$<PATH:REMOVE_FILENAME,${output_file}>"
       COMMAND ${CMAKE_SYCL_COMPILER_LAUNCHER} ${SYCL_EXECUTABLE}
       ${SYCL_device_link_flags}
-      -fsycl-link ${object_files}
-      -Xs ${SYCL_OFFLINE_COMPILER_FLAGS}
+      #-fsycl-link
+      #--sycl-link
+      -c ${object_files}
+      #-Xs ${SYCL_OFFLINE_COMPILER_FLAGS}
       -o ${output_file}
       COMMENT "Building SYCL device link file ${output_file_relative_path}"
       )
@@ -365,17 +369,18 @@ macro(SYCL_ADD_LIBRARY sycl_target)
 
     # Add a custom device linkage command to produce a host relocatable object
     # containing device object module.
-    SYCL_LINK_DEVICE_OBJECTS(
-      ${device_object}
-      ${sycl_target}
-      ${${sycl_target}_sycl_objects})
+    #SYCL_LINK_DEVICE_OBJECTS(
+    #  ${device_object}
+    #  ${sycl_target}
+    #  ${${sycl_target}_sycl_objects})
 
     add_library(
       ${sycl_target}
       ${_cmake_options}
       ${_cxx_sources}
       ${${sycl_target}_sycl_objects}
-      ${device_object})
+      #${device_object}
+    )
   else()
     add_library(
       ${sycl_target}
@@ -424,17 +429,18 @@ macro(SYCL_ADD_EXECUTABLE sycl_target)
 
     # Add a custom device linkage command to produce a host relocatable object
     # containing device object module.
-    SYCL_LINK_DEVICE_OBJECTS(
-      ${device_object}
-      ${sycl_target}
-      ${${sycl_target}_sycl_objects})
+    #SYCL_LINK_DEVICE_OBJECTS(
+    #  ${device_object}
+    #  ${sycl_target}
+    #  ${${sycl_target}_sycl_objects})
 
     add_executable(
       ${sycl_target}
       ${_cmake_options}
       ${_cxx_sources}
       ${${sycl_target}_sycl_objects}
-      ${device_object})
+      #${device_object}
+    )
   else()
     add_executable(
       ${sycl_target}
