@@ -109,8 +109,9 @@ struct IntDivider<unsigned int> {
 
   C10_HOST_DEVICE inline unsigned int div(unsigned int n) const {
 #if defined(__SYCL_DEVICE_ONLY__)
-    uint32_t t = sycl::mul_hi(m1, n);
-    return (t + n) >> shift;
+    TORCH_CHECK(false, "sycl::mul_hi is not supported");
+    //uint32_t t = sycl::mul_hi(m1, n);
+    //return (t + n) >> shift;
 #else
     // Using uint64_t so that the addition does not overflow.
     uint64_t t = ((uint64_t)n * m1) >> 32;

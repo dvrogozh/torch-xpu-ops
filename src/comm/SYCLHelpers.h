@@ -21,6 +21,7 @@ DISABLE_SYCL_DEPRECATED_WARNING_END
 namespace syclext = sycl::ext::oneapi;
 namespace syclexp = sycl::ext::oneapi::experimental;
 
+#if 0
 // sycl access address space
 static constexpr auto sycl_priv_space =
     sycl::access::address_space::private_space;
@@ -55,14 +56,15 @@ using sycl_global_ptr = typename sycl::global_ptr<T>;
 template <typename T>
 using sycl_atomic_ref_rlx_dev_global_t =
     sycl::atomic_ref<T, sycl_mem_odr_rlx, sycl_mem_scp_dev, sycl_global_space>;
-
+#endif
 template <typename ker_t, int dim>
 static inline void sycl_kernel_submit(
     ::sycl::range<dim> range,
     ::sycl::queue q,
     ker_t ker) {
-  auto cgf = [&](::sycl::handler& cgh) { cgh.parallel_for<ker_t>(range, ker); };
-  q.submit(cgf);
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+  //auto cgf = [&](::sycl::handler& cgh) { cgh.parallel_for<ker_t>(range, ker); };
+  //q.submit(cgf);
 }
 
 // Additional convention of SYCL kernel configuration. Besides construct kernel
@@ -87,12 +89,15 @@ static inline void sycl_kernel_submit(
     ::sycl::range<dim> local_range,
     ::sycl::queue q,
     ker_t ker) {
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     ker.sycl_ker_config_convention(cgh);
     cgh.parallel_for<ker_t>(
         ::sycl::nd_range<dim>(global_range, local_range), ker);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t, int dim>
@@ -102,11 +107,14 @@ static inline void sycl_kernel_submit(
     ::sycl::range<dim> local_range,
     ::sycl::queue q,
     ker_t ker) {
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     cgh.parallel_for<ker_t>(
         ::sycl::nd_range<dim>(global_range, local_range), ker);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t>
@@ -116,6 +124,8 @@ static inline void sycl_kernel_submit(
     int64_t local_range,
     ::sycl::queue q,
     ker_t ker) {
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     ker.sycl_ker_config_convention(cgh);
     cgh.parallel_for<ker_t>(
@@ -124,6 +134,7 @@ static inline void sycl_kernel_submit(
         ker);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t>
@@ -133,6 +144,8 @@ static inline void sycl_kernel_submit(
     int64_t local_range,
     ::sycl::queue q,
     ker_t ker) {
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     cgh.parallel_for<ker_t>(
         ::sycl::nd_range<1>(
@@ -140,6 +153,7 @@ static inline void sycl_kernel_submit(
         ker);
   };
   q.submit(cgf);
+#endif
 }
 
 // Overloads accepting kernel properties (e.g., sub_group_size, grf_size).
@@ -157,9 +171,11 @@ struct __SyclKernelWithProps__ {
   void operator()(ItemT&& item, Rest&&...) const {
     kernel_(std::forward<ItemT>(item));
   }
+#if 0
   auto get(::sycl::ext::oneapi::experimental::properties_tag) const {
     return PropsType{};
   }
+#endif
 };
 
 template <typename ker_t, typename Props, int dim>
@@ -171,6 +187,8 @@ static inline void sycl_kernel_submit(
     Props properties,
     ker_t ker) {
   (void)properties;
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     ker.sycl_ker_config_convention(cgh);
     __SyclKernelWithProps__<ker_t, Props> wrapped{ker};
@@ -178,6 +196,7 @@ static inline void sycl_kernel_submit(
         ::sycl::nd_range<dim>(global_range, local_range), wrapped);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t, typename Props, int dim>
@@ -189,12 +208,15 @@ static inline void sycl_kernel_submit(
     Props properties,
     ker_t ker) {
   (void)properties;
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     __SyclKernelWithProps__<ker_t, Props> wrapped{ker};
     cgh.parallel_for<ker_t>(
         ::sycl::nd_range<dim>(global_range, local_range), wrapped);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t, typename Props>
@@ -206,6 +228,8 @@ static inline void sycl_kernel_submit(
     Props properties,
     ker_t ker) {
   (void)properties;
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     ker.sycl_ker_config_convention(cgh);
     __SyclKernelWithProps__<ker_t, Props> wrapped{ker};
@@ -215,6 +239,7 @@ static inline void sycl_kernel_submit(
         wrapped);
   };
   q.submit(cgf);
+#endif
 }
 
 template <typename ker_t, typename Props>
@@ -226,6 +251,8 @@ static inline void sycl_kernel_submit(
     Props properties,
     ker_t ker) {
   (void)properties;
+  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 0
   auto cgf = [&](::sycl::handler& cgh) {
     __SyclKernelWithProps__<ker_t, Props> wrapped{ker};
     cgh.parallel_for<ker_t>(
@@ -234,6 +261,7 @@ static inline void sycl_kernel_submit(
         wrapped);
   };
   q.submit(cgf);
+#endif
 }
 
 // For SYCL free function
@@ -263,7 +291,7 @@ static inline void sycl_kernel_submit(
     ::sycl::queue q,
     int slm_sz,
     Kargs... args) {
-#if defined(SYCL_COMPILER_VERSION) && SYCL_COMPILER_VERSION < 20260100
+#if 0 //defined(SYCL_COMPILER_VERSION) && SYCL_COMPILER_VERSION < 20260100
   sycl::context ctxt = q.get_context();
   auto exe_bndl =
       syclexp::get_kernel_bundle<kptr, sycl::bundle_state::executable>(ctxt);
@@ -280,6 +308,8 @@ static inline void sycl_kernel_submit(
     syclexp::nd_launch(q, cfg, ker, args...);
   }
 #else
+  TORCH_CHECK(false, "syclexp::nd_launch is not supported");
+#if 0
   if (slm_sz != 0) {
     syclexp::launch_config cfg{
         ::sycl::nd_range<1>(
@@ -295,6 +325,7 @@ static inline void sycl_kernel_submit(
         args...);
   }
 #endif
+#endif
 }
 
 // TODO: unify and remove the if-else for slm_sz
@@ -305,7 +336,7 @@ static inline void sycl_kernel_submit(
     ::sycl::queue q,
     int slm_sz,
     Kargs... args) {
-#if defined(SYCL_COMPILER_VERSION) && SYCL_COMPILER_VERSION < 20260100
+#if 0 //defined(SYCL_COMPILER_VERSION) && SYCL_COMPILER_VERSION < 20260100
   sycl::context ctxt = q.get_context();
   auto exe_bndl =
       syclexp::get_kernel_bundle<kptr, sycl::bundle_state::executable>(ctxt);
@@ -322,6 +353,8 @@ static inline void sycl_kernel_submit(
     syclexp::nd_launch(q, cfg, ker, args...);
   }
 #else
+  TORCH_CHECK(false, "syclexp::nd_launch is not supported");
+#if 0
   if (slm_sz != 0) {
     syclexp::launch_config cfg{
         ::sycl::nd_range<dim>(global_range, local_range),
@@ -334,6 +367,7 @@ static inline void sycl_kernel_submit(
         syclexp::kernel_function<kptr>,
         args...);
   }
+#endif
 #endif
 }
 
