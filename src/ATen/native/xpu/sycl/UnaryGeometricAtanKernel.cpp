@@ -33,7 +33,8 @@ struct AtanFunctor {
       return std::atan(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::atan(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::atan is not supported");
+      //return sycl::atan(static_cast<opmath_t>(a));
     }
   }
 };

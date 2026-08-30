@@ -27,7 +27,8 @@ struct CosFunctor {
       return std::cos(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::cos(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::cos is not supported");
+      //return sycl::cos(static_cast<opmath_t>(a));
     }
   }
 };

@@ -82,7 +82,8 @@ template <typename scalar_t>
 struct SignbitFunctor {
   bool operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::signbit(opmath_t{a});
+    TORCH_CHECK(false, "sycl::signbit is not supported");
+    //return sycl::signbit(opmath_t{a});
   }
 };
 

@@ -52,11 +52,13 @@ static inline C10_HOST_DEVICE scalar_t calc_digamma(scalar_t in) {
   if (x == accscalar_t(0)) {
     // As per C++ standard for gamma related functions and SciPy,
     // If the argument is ±0, ±∞ is returned
-    return static_cast<scalar_t>(
-        sycl::copysign(static_cast<accscalar_t>(INFINITY), -x));
+    TORCH_CHECK(false, "sycl::copysign is not supported");
+    //return static_cast<scalar_t>(
+    //    sycl::copysign(static_cast<accscalar_t>(INFINITY), -x));
   }
 
-  bool x_is_integer = x == sycl::trunc(x);
+  TORCH_CHECK(false, "sycl::trunc is not supported");
+  bool x_is_integer = false; //x == sycl::trunc(x);
   accscalar_t result = 0;
   if (x < accscalar_t(0)) {
     if (x_is_integer) {
@@ -94,8 +96,9 @@ static inline C10_HOST_DEVICE scalar_t calc_digamma(scalar_t in) {
     y = z * polevl_result;
   }
 
-  return static_cast<scalar_t>(
-      sycl::log(x) - (static_cast<accscalar_t>(0.5) / x) - y + result);
+  TORCH_CHECK(false, "sycl::log is not supported");
+  //return static_cast<scalar_t>(
+  //    sycl::log(x) - (static_cast<accscalar_t>(0.5) / x) - y + result);
 }
 
 // regularized lower incomplete gamma
@@ -129,7 +132,8 @@ scalar_t ratevl(
 
   int64_t i, dir;
   accscalar_t y, num_ans, denom_ans;
-  accscalar_t absx = sycl::fabs(x);
+  TORCH_CHECK(false, "sycl::fabs is not supported");
+  accscalar_t absx = 0; //sycl::fabs(x);
   const accscalar_t* p;
 
   if (absx > 1) {
@@ -165,7 +169,8 @@ scalar_t ratevl(
   }
   if (absx > 1) {
     i = N - M;
-    return sycl::pow(x, static_cast<accscalar_t>(i)) * num_ans / denom_ans;
+    TORCH_CHECK(false, "sycl::pow is not supported");
+    //return sycl::pow(x, static_cast<accscalar_t>(i)) * num_ans / denom_ans;
   } else {
     return num_ans / denom_ans;
   }
@@ -236,7 +241,8 @@ static scalar_t _igam_helper_fac(scalar_t a, scalar_t x) {
   static const accscalar_t EXP1 = 2.718281828459045;
   static const accscalar_t lanczos_g = 6.024680040776729583740234375;
 
-  if (sycl::fabs(a - x) > 0.4 * sycl::fabs(a)) {
+  TORCH_CHECK(false, "sycl::fabs, log, lgamma, exp, sqrt, ... are not supported");
+  /*if (sycl::fabs(a - x) > 0.4 * sycl::fabs(a)) {
     ax = a * sycl::log(x) - x - sycl::lgamma(a);
     if (ax < -MAXLOG) {
       return 0.0;
@@ -254,7 +260,7 @@ static scalar_t _igam_helper_fac(scalar_t a, scalar_t x) {
     numfac = num / fac;
     res *= sycl::exp(
         a * (sycl::log1p(numfac) - numfac) + x * (0.5 - lanczos_g) / fac);
-  }
+  }*/
   return res;
 }
 
@@ -306,7 +312,8 @@ static scalar_t _igamc_helper_series(scalar_t a, scalar_t x) {
       ? 1.11022302462515654042E-16
       : 5.9604644775390625E-8;
 
-  for (n = 1; n < MAXITER; n++) {
+  TORCH_CHECK(false, "sycl::fabs, log, expm1, lgamma, exp are not supported");
+  /*for (n = 1; n < MAXITER; n++) {
     fac *= -x / n;
     term = fac / (a + n);
     sum += term;
@@ -317,7 +324,7 @@ static scalar_t _igamc_helper_series(scalar_t a, scalar_t x) {
 
   logx = sycl::log(x);
   term = -sycl::expm1(a * logx - sycl::lgamma(1 + a));
-  return term - sycl::exp(a * logx - sycl::lgamma(a)) * sum;
+  return term - sycl::exp(a * logx - sycl::lgamma(a)) * sum;*/
 }
 
 template <typename scalar_t>
@@ -589,6 +596,8 @@ static const scalar_t _igam_helper_asymptotic_series(
     sgn = 1;
   }
 
+  TORCH_CHECK(false, "sycl::sqrt, ... are not supported");
+#if 0
   if (lambda > 1) {
     eta = sycl::sqrt(-2 * (sycl::log1p(sigma) - sigma));
   } else if (lambda < 1) {
@@ -627,6 +636,7 @@ static const scalar_t _igam_helper_asymptotic_series(
   res += sgn * sycl::exp(-0.5 * a * eta * eta) * sum / sycl::sqrt(2 * PI * a);
 
   return res;
+#endif
 }
 
 template <typename scalar_t>
@@ -661,6 +671,8 @@ static scalar_t _igamc_helper_continued_fraction(scalar_t a, scalar_t x) {
   qkm1 = z * x;
   ans = pkm1 / qkm1;
 
+  TORCH_CHECK(false, "sycl::fabs, ... are not supported");
+#if 0
   for (i = 0; i < MAXITER; i++) {
     c += 1.0;
     y += 1.0;
@@ -690,6 +702,7 @@ static scalar_t _igamc_helper_continued_fraction(scalar_t a, scalar_t x) {
     }
   }
   return ans * ax;
+#endif
 }
 
 template <typename scalar_t>
@@ -713,6 +726,8 @@ inline scalar_t calc_igammac(scalar_t a, scalar_t x) {
   static const accscalar_t SMALLRATIO = 0.3;
   static const accscalar_t LARGERATIO = 4.5;
 
+  TORCH_CHECK(false, "sycl::isinf, ... are not supported");
+#if 0
   bool is_inf_a = sycl::isinf(static_cast<accscalar_t>(a));
   bool is_inf_x = sycl::isinf(static_cast<accscalar_t>(x));
 
@@ -762,6 +777,7 @@ inline scalar_t calc_igammac(scalar_t a, scalar_t x) {
       return _igamc_helper_series(a, x);
     }
   }
+#endif
 }
 
 template <typename scalar_t>
@@ -784,6 +800,7 @@ inline scalar_t calc_igamma(scalar_t a, scalar_t x) {
   static const accscalar_t SMALLRATIO = 0.3;
   static const accscalar_t LARGERATIO = 4.5;
 
+#if 0
   bool is_inf_a = sycl::isinf(static_cast<accscalar_t>(a));
   bool is_inf_x = sycl::isinf(static_cast<accscalar_t>(x));
 
@@ -823,6 +840,7 @@ inline scalar_t calc_igamma(scalar_t a, scalar_t x) {
   }
 
   return _igam_helper_series(a, x);
+#endif
 }
 
 /*
@@ -937,12 +955,13 @@ static inline C10_HOST_DEVICE scalar_t bessel_j1_forward(scalar_t x) {
     qq = qq * (scalar_t(5.0) / x * (scalar_t(5.0) / x)) + QQ[index];
   }
 
-  return sign *
+  TORCH_CHECK(false, "sycl::sqrt is not supported");
+  /*return sign *
       (pp / pq *
            std::cos(x - scalar_t(2.356194490192344928846982537459627163)) -
        scalar_t(5.0) / x * (qp / qq) *
            std::sin(x - scalar_t(2.356194490192344928846982537459627163))) *
-      scalar_t(0.797884560802865355879892119868763737) / sycl::sqrt(x);
+      scalar_t(0.797884560802865355879892119868763737) / sycl::sqrt(x);*/
 } // bessel_j1_forward(scalar_t x)
 
 template <typename scalar_t>
@@ -1029,9 +1048,10 @@ static inline C10_HOST_DEVICE scalar_t bessel_y1_forward(scalar_t x) {
       yq = yq * (x * x) + YQ[index];
     }
 
-    return x * (yp / yq) +
+    TORCH_CHECK(false, "sycl::log is not supported");
+    /*return x * (yp / yq) +
         (scalar_t(0.636619772367581343075535053490057448) *
-         (bessel_j1_forward(x) * sycl::log(x) - scalar_t(1.0) / x));
+         (bessel_j1_forward(x) * sycl::log(x) - scalar_t(1.0) / x));*/
   }
 
   scalar_t pp = 0.0;
@@ -1058,11 +1078,12 @@ static inline C10_HOST_DEVICE scalar_t bessel_y1_forward(scalar_t x) {
     qq = qq * (scalar_t(5.0) / x * (scalar_t(5.0) / x)) + QQ[index];
   }
 
-  return (pp / pq *
+  TORCH_CHECK(false, "sycl::sin, cos, sqrt is not supported");
+  /*return (pp / pq *
               std::sin(x - scalar_t(2.356194490192344928846982537459627163)) +
           scalar_t(5.0) / x * (qp / qq) *
               std::cos(x - scalar_t(2.356194490192344928846982537459627163))) *
-      scalar_t(0.797884560802865355879892119868763737) / sycl::sqrt(x);
+      scalar_t(0.797884560802865355879892119868763737) / sycl::sqrt(x);*/
 } // bessel_y1_forward(scalar_t x)
 
 } // namespace at::native::xpu

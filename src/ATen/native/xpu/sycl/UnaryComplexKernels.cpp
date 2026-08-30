@@ -41,7 +41,7 @@ void conj_kernel(TensorIterator& iter) {
         if constexpr (c10::is_complex<scalar_t>::value) {
           gpu_kernel(iter, ConjScalarFunc<scalar_t>());
         } else {
-          copy_kernel(iter);
+          //copy_kernel(iter);
         }
       }),
       AT_EXPAND(AT_ALL_TYPES),
@@ -75,7 +75,7 @@ void conj_physical_kernel(TensorIteratorBase& iter) {
         if constexpr (c10::is_complex<scalar_t>::value) {
           gpu_kernel(iter, ConjPhysicalFunctor<scalar_t>());
         } else {
-          copy_kernel(iter);
+          //copy_kernel(iter);
         }
       }),
       AT_EXPAND(AT_ALL_TYPES),

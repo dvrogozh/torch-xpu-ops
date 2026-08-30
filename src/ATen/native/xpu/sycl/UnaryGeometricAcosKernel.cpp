@@ -23,7 +23,8 @@ struct AcosFunctor {
     if constexpr (c10::is_complex<acc_t>::value) {
       return std::acos(static_cast<acc_t>(a));
     } else {
-      return sycl::acos(static_cast<acc_t>(a));
+      TORCH_CHECK(false, "sycl::acos is not supported");
+      //return sycl::acos(static_cast<acc_t>(a));
     }
   }
 };

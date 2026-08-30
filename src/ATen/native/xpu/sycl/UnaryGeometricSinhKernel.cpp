@@ -30,7 +30,8 @@ template <typename scalar_t>
 struct SinhFunctor {
   scalar_t operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::sinh(static_cast<opmath_t>(a));
+    TORCH_CHECK(false, "sycl::sinh is not supported");
+    //return sycl::sinh(static_cast<opmath_t>(a));
   }
 };
 

@@ -34,7 +34,8 @@ struct SqrtFunctor {
       return std::sqrt(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::sqrt(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::sqrt is not supported");
+      //return sycl::sqrt(static_cast<opmath_t>(a));
     }
   }
 };
@@ -42,23 +43,26 @@ struct SqrtFunctor {
 template <typename scalar_t>
 struct RsqrtFunctor {
   scalar_t operator()(scalar_t a) const {
-    return sycl::rsqrt(float(a));
+    TORCH_CHECK(false, "sycl::rsqrt is not supported");
+    //return sycl::rsqrt(float(a));
   }
 };
 
 template <>
 struct RsqrtFunctor<double> {
   double operator()(double a) const {
-    return sycl::rsqrt(a);
+    TORCH_CHECK(false, "sycl::rsqrt is not supported");
+    //return sycl::rsqrt(a);
   }
 };
 
 template <typename T>
 struct RsqrtFunctor<c10::complex<T>> {
   c10::complex<T> operator()(c10::complex<T> a) const {
-    return c10::complex<T>(1.0, 0) /
-        static_cast<c10::complex<T>>(
-               std::sqrt(static_cast<std::complex<T>>(a)));
+    TORCH_CHECK(false, "sycl::sqrt is not supported");
+    //return c10::complex<T>(1.0, 0) /
+    //    static_cast<c10::complex<T>>(
+    //           std::sqrt(static_cast<std::complex<T>>(a)));
   }
 };
 
@@ -68,7 +72,8 @@ struct ExpFunctor {
     if constexpr (c10::is_complex<acc_t>::value) {
       return std::exp(static_cast<acc_t>(a));
     } else {
-      return sycl::exp(static_cast<acc_t>(a));
+      TORCH_CHECK(false, "sycl::exp is not supported");
+      //return sycl::exp(static_cast<acc_t>(a));
     }
   }
 };
@@ -272,7 +277,8 @@ template <typename scalar_t>
 struct Expm1Functor {
   scalar_t operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::expm1(static_cast<opmath_t>(a));
+    TORCH_CHECK(false, "sycl::expm1 is not supported");
+    //return sycl::expm1(static_cast<opmath_t>(a));
   }
 };
 
@@ -280,9 +286,10 @@ template <typename T>
 struct Expm1Functor<c10::complex<T>> {
   c10::complex<T> operator()(c10::complex<T> x) const {
     auto a = std::sin(T(.5) * x.imag());
-    auto re = sycl::expm1(x.real()) * std::cos(x.imag()) - T(2) * a * a;
+    TORCH_CHECK(false, "sycl::expm1, cos, sin are not supported");
+    /*auto re = sycl::expm1(x.real()) * std::cos(x.imag()) - T(2) * a * a;
     auto im = std::exp(x.real()) * std::sin(x.imag());
-    return c10::complex<T>(re, im);
+    return c10::complex<T>(re, im);*/
   }
 };
 
@@ -300,8 +307,9 @@ struct FrexpFunctor {
   std::tuple<scalar_t, int32_t> operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
     int32_t exponent;
-    opmath_t mantissa = sycl::frexp(static_cast<opmath_t>(a), &exponent);
-    return {static_cast<scalar_t>(mantissa), exponent};
+    TORCH_CHECK(false, "sycl::frexp is not supported");
+    //opmath_t mantissa = sycl::frexp(static_cast<opmath_t>(a), &exponent);
+    //return {static_cast<scalar_t>(mantissa), exponent};
   }
 };
 

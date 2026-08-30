@@ -29,7 +29,7 @@ DISABLE_SYCL_DEPRECATED_WARNING_END
 #include <c10/xpu/XPUStream.h>
 #include <comm/xpu_aten.h>
 
-//#include <ATen/native/xpu/sycl/CopyKernel.h>
+#include <ATen/native/xpu/sycl/CopyKernel.h>
 //#include <ATen/native/xpu/sycl/TransposeKernel.h>
 //#include <ATen/native/xpu/sycl/UnaryComplexKernels.h>
 //#include <comm/SYCLContext.h>

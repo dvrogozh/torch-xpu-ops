@@ -27,7 +27,8 @@ struct TanhFunctor {
     if constexpr (c10::is_complex<opmath_t>::value) {
       return std::tanh(static_cast<opmath_t>(a));
     } else {
-      return sycl::tanh(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::tanh is not supported");
+      //return sycl::tanh(static_cast<opmath_t>(a));
     }
   }
 };

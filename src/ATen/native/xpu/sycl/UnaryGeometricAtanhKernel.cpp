@@ -33,7 +33,8 @@ struct AtanhFunctor {
       return std::atanh(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::atanh(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::native::atanh is not supported");
+      //return sycl::atanh(static_cast<opmath_t>(a));
     }
   }
 };

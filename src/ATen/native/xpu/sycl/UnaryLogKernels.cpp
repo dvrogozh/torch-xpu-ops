@@ -33,7 +33,8 @@ struct LogFunctor {
       return std::log(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::log(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::log is not supported");
+      //return sycl::log(static_cast<opmath_t>(a));
     }
   }
 };
@@ -69,7 +70,8 @@ struct Log10Functor {
       return std::log10(x);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::log10(static_cast<opmath_t>(x));
+      TORCH_CHECK(false, "sycl::log10 is not supported");
+      //return sycl::log10(static_cast<opmath_t>(x));
     }
   }
 };
@@ -90,7 +92,8 @@ struct Log1pFunctor {
       return std::log1p(x);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::log1p(static_cast<opmath_t>(x));
+      TORCH_CHECK(false, "sycl::log1p is not supported");
+      //return sycl::log1p(static_cast<opmath_t>(x));
     }
   }
 };
@@ -111,7 +114,8 @@ struct Log2Functor {
       return std::log2(x);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::log2(static_cast<opmath_t>(x));
+      TORCH_CHECK(false, "sycl::log2 is not supported");
+      //return sycl::log2(static_cast<opmath_t>(x));
     }
   }
 };

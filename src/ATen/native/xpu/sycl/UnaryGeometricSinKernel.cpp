@@ -27,7 +27,8 @@ struct SinFunctor {
       return std::sin(a);
     } else {
       using opmath_t = at::opmath_type<scalar_t>;
-      return sycl::sin(static_cast<opmath_t>(a));
+      TORCH_CHECK(false, "sycl::sin is not supported");
+      //return sycl::sin(static_cast<opmath_t>(a));
     }
   }
 };

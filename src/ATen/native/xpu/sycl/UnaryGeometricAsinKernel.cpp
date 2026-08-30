@@ -30,7 +30,8 @@ template <typename scalar_t>
 struct AsinFunctor {
   scalar_t operator()(const scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::asin(static_cast<opmath_t>(a));
+    TORCH_CHECK(false, "sycl::asin is not supported");
+    //return sycl::asin(static_cast<opmath_t>(a));
   }
 };
 

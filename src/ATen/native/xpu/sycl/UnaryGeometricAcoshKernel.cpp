@@ -24,7 +24,8 @@ struct AcoshFunctor {
     if constexpr (c10::is_complex<acc_t>::value) {
       return std::acosh(static_cast<acc_t>(a));
     } else {
-      return sycl::acosh(static_cast<acc_t>(a));
+      TORCH_CHECK(false, "sycl::acosh is not supported");
+      //return sycl::acosh(static_cast<acc_t>(a));
     }
   }
 };
