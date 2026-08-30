@@ -144,8 +144,8 @@ static inline void sycl_kernel_submit(
     int64_t local_range,
     ::sycl::queue q,
     ker_t ker) {
-  TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
-#if 0
+  //TORCH_CHECK(false, "sycl::handler and sycl::queue::submit are not supported");
+#if 1
   auto cgf = [&](::sycl::handler& cgh) {
     cgh.parallel_for<ker_t>(
         ::sycl::nd_range<1>(

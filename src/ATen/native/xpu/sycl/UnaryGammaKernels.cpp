@@ -97,7 +97,8 @@ template <typename scalar_t>
 struct LgammaFunctor {
   scalar_t operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::lgamma(static_cast<opmath_t>(a));
+    SYCL_KERNEL_ASSERT(!"sycl::lgamma is not supported");
+    //return sycl::lgamma(static_cast<opmath_t>(a));
   }
 };
 

@@ -36,6 +36,8 @@ set(SYCL_executable "@SYCL_EXECUTABLE@") # path
 set(SYCL_compile_flags @SYCL_COMPILE_FLAGS@) # list
 set(SYCL_include_dirs [==[@SYCL_include_dirs@]==]) # list
 set(SYCL_compile_definitions [==[@SYCL_compile_definitions@]==]) # list
+set(SYCL_offline_compiler_flags [==[@SYCL_OFFLINE_COMPILER_FLAGS@]==]) # list
+set(SYCL_device_link_flags [==[@SYCL_DEVICE_LINK_FLAGS@]==]) # list
 
 list(REMOVE_DUPLICATES SYCL_include_dirs)
 
@@ -123,15 +125,20 @@ if(WIN32)
 else()
   set(SYCL_dependency_file_args -MD -MF "${SYCL_generated_dependency_file}")
 endif()
+message("PPP: ${SYCL_executable} ${SYCL_dependency_file_args} -fno-gpu-rdc -c ${source_file} -o ${generated_file} ${SYCL_include_args} ${SYCL_compile_flags}")
+message("QQQ: ${SYCL_device_link_flags} -Xs ${SYCL_offline_compiler_flags}")
 SYCL_execute_process(
   "Generating ${generated_file}"
   COMMAND "${SYCL_executable}"
   ${SYCL_dependency_file_args}
+  -fno-gpu-rdc
   -c
   "${source_file}"
   -o "${generated_file}"
   ${SYCL_include_args}
   ${SYCL_compile_flags}
+  #${SYCL_device_link_flags}
+  #-Xs ${SYCL_offline_compiler_flags}")
   )
 
 if(SYCL_result)

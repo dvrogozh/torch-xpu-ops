@@ -16,13 +16,33 @@ if(BUILD_EAGER_MODE)
 else()
   set(xpu_native_cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Copy.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Resize.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/AbsKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/UnaryOps.cpp
   )
   set(xpu_sycl
-    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/Copy.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/TensorFactories.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/AbsKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/CopyKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/ResizeKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryComplexKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryFractionKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGammaKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAcosKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAcoshKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAsinKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAsinhKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAtanKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricAtanhKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricCosKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricCoshKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricSinKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricSinhKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricTanKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryGeometricTanhKernel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnaryLogKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnarySignKernels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/native/xpu/sycl/UnarySpecialOpsKernels.cpp
   )
 
 endif()

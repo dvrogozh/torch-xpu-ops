@@ -30,7 +30,8 @@ template <typename scalar_t>
 struct TanFunctor {
   scalar_t operator()(scalar_t a) const {
     using opmath_t = at::opmath_type<scalar_t>;
-    return sycl::tan(static_cast<opmath_t>(a));
+    SYCL_KERNEL_ASSERT(!"sycl::tan is not supported");
+    //return sycl::tan(static_cast<opmath_t>(a));
   }
 };
 

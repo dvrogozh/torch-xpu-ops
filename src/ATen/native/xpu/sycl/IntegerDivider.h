@@ -109,7 +109,7 @@ struct IntDivider<unsigned int> {
 
   C10_HOST_DEVICE inline unsigned int div(unsigned int n) const {
 #if defined(__SYCL_DEVICE_ONLY__)
-    TORCH_CHECK(false, "sycl::mul_hi is not supported");
+    SYCL_KERNEL_ASSERT(!"sycl::mul_hi is not supported");
     //uint32_t t = sycl::mul_hi(m1, n);
     //return (t + n) >> shift;
 #else

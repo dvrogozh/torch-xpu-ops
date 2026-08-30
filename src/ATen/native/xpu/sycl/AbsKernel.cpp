@@ -23,7 +23,8 @@ namespace at::native::xpu {
 template <typename scalar_t>
 struct AbsFunctor {
   scalar_t operator()(const scalar_t a) const {
-    return std::abs(a);
+    SYCL_KERNEL_ASSERT(!"std::abs is not supported");
+    return 0; //std::abs(a);
   }
 };
 
