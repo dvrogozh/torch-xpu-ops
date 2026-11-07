@@ -7,27 +7,17 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 
 # Setup building flags for SYCL device and host codes.
+#
+# SYCL sources are compiled with the native CMake SYCL language (see SYCL.cmake).
+# set_build_flags() composes the flags, torch_xpu_ops_sycl_target_flags()
+# applies them to a target compiling SYCL sources.
 
+include(CheckCompilerFlag)
+
+# Check that the SYCL compiler accepts FLAG (a list) when building a SYCL
+# program. The result is cached in VARIABLE_NAME.
 function(CHECK_SYCL_FLAG FLAG VARIABLE_NAME)
-  set(TEMP_DIR "${CMAKE_BINARY_DIR}/temp")
-  file(MAKE_DIRECTORY ${TEMP_DIR})
-  set(TEST_SRC_FILE "${TEMP_DIR}/check_options.cpp")
-  set(TEST_EXE_FILE "${TEMP_DIR}/check_options.out")
-  file(WRITE ${TEST_SRC_FILE} "#include <iostream>\nint main() { std::cout << \"Checking compiler options ...\" << std::endl; return 0; }\n")
-  execute_process(
-      COMMAND ${SYCL_COMPILER} -fsycl ${TEST_SRC_FILE} -o ${TEST_EXE_FILE} ${FLAG}
-      WORKING_DIRECTORY ${TEMP_DIR}
-      OUTPUT_VARIABLE output
-      ERROR_VARIABLE output
-      RESULT_VARIABLE result
-      TIMEOUT 60
-  )
-  if(result EQUAL 0)
-      set(${VARIABLE_NAME} TRUE PARENT_SCOPE)
-  else()
-      set(${VARIABLE_NAME} FALSE PARENT_SCOPE)
-  endif()
-  file(REMOVE_RECURSE ${TEMP_DIR})
+  check_compiler_flag(SYCL "${FLAG}" ${VARIABLE_NAME})
 endfunction()
 
 macro(set_build_flags)
@@ -36,27 +26,33 @@ macro(set_build_flags)
     message(WARNING "Not compiling with XPU. Currently only support GCC/Clang compiler on Linux and MSVC compiler on Windows as CXX compiler.")
     return()
   endif()
+  # Host C++ flags, applied to all torch-xpu-ops sources (TORCH_XPU_OPS_FLAGS).
   set(SYCL_HOST_FLAGS)
-  set(SYCL_HOST_FLAGS_DIRECT_TO_SYCL)
+  # CMAKE_CXX_FLAGS entries omitted from CMAKE_SYCL_FLAGS.
   set(SYCL_HOST_FLAGS_EXCLUDED_FROM_SYCL)
+  # Warning flags for SYCL compilation only.
   set(SYCL_HOST_FLAGS_ONLY_FOR_SYCL)
   set(SYCL_DEVICE_COMPILE_DEFINITIONS)
+  # Per-config host-only flags for SYCL compilation (wrapped with -Xarch_host).
   set(SYCL_HOST_PER_CONFIG_FLAGS)
-  set(SYCL_COMPILE_FLAGS ${SYCL_FLAGS})
-  set(SYCL_DEVICE_LINK_FLAGS ${SYCL_LINK_FLAGS})
+  # -fsycl is added by CMake. -std= comes from SYCL_CXX_STANDARD and
+  # -fsycl-targets= from SYCL_DEVICE_TARGETS.
+  set(SYCL_COMPILE_FLAGS)
+  set(SYCL_DEVICE_TARGETS)
+  set(SYCL_DEVICE_LINK_FLAGS)
   set(SYCL_OFFLINE_COMPILER_AOT_OPTIONS)
   set(SYCL_OFFLINE_COMPILER_CG_OPTIONS)
   set(SYCL_OFFLINE_COMPILER_FLAGS)
 
-  # Definitions that must reach the SYCL device compiler only, not the
-  # host C++ compilation. Consumed by SYCL_WRAP_SRCS in FindSYCL.cmake.
+  # Definitions that must reach the SYCL compiler only, not the host C++
+  # compilation of non-SYCL sources.
   if(NOT DEFINED SYCL_COMPILER_VERSION OR NOT DEFINED USE_XPU)
     message(FATAL_ERROR "SYCL_COMPILER_VERSION and USE_XPU must be defined. "
       "Ensure SYCLToolkit is found before building torch-xpu-ops.")
   endif()
   list(APPEND SYCL_DEVICE_COMPILE_DEFINITIONS SYCL_COMPILER_VERSION=${SYCL_COMPILER_VERSION})
   # Keep the bare spelling: it must match PyTorch's add_compile_definitions(USE_XPU)
-  # so FindSYCL's exact-string dedup drops it instead of redefining the macro.
+  # so CMake's exact-string dedup drops it instead of redefining the macro.
   list(APPEND SYCL_DEVICE_COMPILE_DEFINITIONS USE_XPU)
 
   set(CPP_STD c++20)
@@ -69,17 +65,16 @@ macro(set_build_flags)
     list(APPEND SYCL_HOST_FLAGS /wd4996) # allow usage of deprecated functions
     list(APPEND SYCL_HOST_FLAGS /wd4018) # allow signed and unsigned comparison
 
-    # -fsycl-host-compiler-options never sees CMAKE_CXX_FLAGS_<CONFIG>, so spell
-    # per-config flags here via $<CONFIG:>. /Z7 (not /Zi) avoids PDB contention.
+    # SYCL compilation never sees CMAKE_CXX_FLAGS_<CONFIG>, so spell per-config
+    # host flags here via $<CONFIG:>. /Z7 (not /Zi) avoids PDB contention.
     set(SYCL_HOST_PER_CONFIG_FLAGS
-      $<$<CONFIG:Debug>:/Od;/Z7>
-      $<$<CONFIG:RelWithDebInfo>:/O2;/Z7>)
+      "$<$<CONFIG:Debug>:SHELL:-Xarch_host /Od;SHELL:-Xarch_host /Z7>"
+      "$<$<CONFIG:RelWithDebInfo>:SHELL:-Xarch_host /O2;SHELL:-Xarch_host /Z7>")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     list(APPEND SYCL_HOST_FLAGS -fPIC)
     list(APPEND SYCL_HOST_FLAGS -std=${CPP_STD})
     if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-      # This is a driver option and cannot be forwarded with -Xarch_host.
-      list(APPEND SYCL_HOST_FLAGS_DIRECT_TO_SYCL -Qunused-arguments)
+      list(APPEND SYCL_COMPILE_FLAGS -Qunused-arguments)
     endif()
     # These GCC warning options remain available to regular host compilation,
     # but are not supported by the Intel SYCL/Clang host frontend.
@@ -98,9 +93,10 @@ macro(set_build_flags)
 
     # PyTorch forces -O2 into the base CMAKE_CXX_FLAGS this path inherits, so
     # Debug must override it back to -O0; RelWithDebInfo only adds debug info.
+    # Host only: device debug is controlled by XPU_DEVICE_DEBUG/DEBUG_XPU below.
     set(SYCL_HOST_PER_CONFIG_FLAGS
-      $<$<CONFIG:Debug>:-g;-fno-omit-frame-pointer;-O0>
-      $<$<CONFIG:RelWithDebInfo>:-g>)
+      "$<$<CONFIG:Debug>:SHELL:-Xarch_host -g;SHELL:-Xarch_host -fno-omit-frame-pointer;SHELL:-Xarch_host -O0>"
+      "$<$<CONFIG:RelWithDebInfo>:SHELL:-Xarch_host -g>")
   endif()
 
   if(USE_PER_OPERATOR_HEADERS)
@@ -120,13 +116,13 @@ macro(set_build_flags)
   #
   # PSEUDO of the default Linux pure icpx build (BUILD_SEPARATE_OPS disabled).
   # 1. Kernel source compilation (icpx handles both host and device code):
-  # icpx ${SYCL_COMPILE_FLAGS} -Xarch_host '${CMAKE_HOST_FLAGS}' kernel.cpp -o kernel.o
-  # 2. Device code linkage:
-  # icpx -fsycl -fsycl-target=${SYCL_TARGETS_OPTION} -fsycl-link ${SYCL_DEVICE_LINK_FLAGS} -Xs '${SYCL_OFFLINE_COMPILER_FLAGS}' kernel.o -o device-code.o
+  # icpx -fsycl ${CMAKE_SYCL_FLAGS} -std=c++20 -fsycl-targets=${SYCL_DEVICE_TARGETS} -fgpu-rdc ${SYCL_COMPILE_FLAGS} kernel.cpp -o kernel.o
+  # 2. Device code linkage (SYCL_RESOLVE_DEVICE_SYMBOLS):
+  # icpx ${CMAKE_SYCL_FLAGS} -fsycl-targets=${SYCL_DEVICE_TARGETS} ${SYCL_DEVICE_LINK_FLAGS} -Xs '${SYCL_OFFLINE_COMPILER_FLAGS}' -fsycl -fsycl-link host.o kernel.o -o cmake_device_link.o
   # 3. Host only source compilation:
-  # gcc ${CMAKE_HOST_FLAGS} host.cpp -o host.o
+  # gcc ${CMAKE_CXX_FLAGS} host.cpp -o host.o
   # 4. Archive torch-xpu-ops objects:
-  # ar rcs libtorch_xpu_ops.a host.o kernel.o device-code.o
+  # ar qc libtorch_xpu_ops.a host.o kernel.o cmake_device_link.o
   # 5. Link the final PyTorch XPU shared library:
   # gcc -shared -Wl,--whole-archive libtorch_xpu_ops.a -Wl,--no-whole-archive -o libtorch_xpu.so
   list(APPEND SYCL_COMPILE_FLAGS -fno-sycl-unnamed-lambda)
@@ -146,21 +142,19 @@ macro(set_build_flags)
   CHECK_SYCL_FLAG("${_sycl_strict_fp_flag}" _supports_strict_fp)
   if(NOT _supports_strict_fp)
     message(FATAL_ERROR
-      "SYCL compiler ${SYCL_COMPILER} rejects ${_sycl_strict_fp_flag}; its "
+      "SYCL compiler ${CMAKE_SYCL_COMPILER} rejects ${_sycl_strict_fp_flag}; its "
       "default fast-math would silently break kernel inf/NaN semantics.")
   endif()
   list(APPEND SYCL_COMPILE_FLAGS ${_sycl_strict_fp_flag})
 
   if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-    # On Windows icx uses the clang-cl driver, which ignores -std= with
-    # only a warning; spell it as -Qstd= so device code is really C++20.
-    list(APPEND SYCL_COMPILE_FLAGS -Qstd=${CPP_STD})
+    # The C++ standard comes from SYCL_CXX_STANDARD, which CMake spells as
+    # -Qstd:c++20 for the MSVC-like icx driver.
     list(APPEND SYCL_COMPILE_FLAGS /Qfma)
     list(APPEND SYCL_COMPILE_FLAGS /Qftz-)
     # Suppress warnings about dllexport.
     list(APPEND SYCL_COMPILE_FLAGS -Wno-ignored-attributes)
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    list(APPEND SYCL_COMPILE_FLAGS -std=${CPP_STD})
     list(APPEND SYCL_COMPILE_FLAGS -Wno-absolute-value)
     # -fma which we used before is an alias used for -ffp-contract=fast for compatibility reasons
     # with very old version of the ICX compiler. The -ffp-contract=fast is supported by both closed
@@ -209,10 +203,10 @@ macro(set_build_flags)
   # TORCH_XPU_OPS_FLAGS stays config-agnostic: its target_compile_options
   # consumers already get PyTorch's per-config host flags via
   # CMAKE_CXX_FLAGS_<CONFIG> (which carries -fno-omit-frame-pointer/-O0 in
-  # Debug, and /Z7 in place of /Zi through MSVC_Z7_OVERRIDE). The genexes below
-  # feed only SYCL_host_arch_flags.
+  # Debug, and /Z7 in place of /Zi through MSVC_Z7_OVERRIDE). The per-config
+  # genexes in SYCL_HOST_PER_CONFIG_FLAGS feed only SYCL compilation.
+  # TORCH_XPU_OPS_FLAGS applies to SYCL sources as well.
   set(TORCH_XPU_OPS_FLAGS ${SYCL_HOST_FLAGS})
-  list(APPEND SYCL_HOST_FLAGS ${SYCL_HOST_PER_CONFIG_FLAGS})
 
   # -- SYCL device object linkage flags
   include(ProcessorCount)
@@ -233,7 +227,7 @@ macro(set_build_flags)
   string(APPEND SYCL_OFFLINE_COMPILER_CG_OPTIONS " -options -cl-intel-greater-than-4GB-buffer-required")
 
   if(REPLACE_FLAGS_FOR_SYCLTLA)
-    set(SYCL_TARGETS_OPTION -fsycl-targets=spir64_gen)
+    set(SYCL_DEVICE_TARGETS spir64_gen)
     # FlashAttention's softmax subtracts a rounded row maximum from s * scale.
     # Contracting those into an FMA leaves the product unrounded, so the
     # largest element no longer cancels to zero; the residual is ~ulp(s*scale)
@@ -249,7 +243,7 @@ macro(set_build_flags)
     CHECK_SYCL_FLAG("${_sycltla_no_fma_flag}" _supports_no_fma)
     if(NOT _supports_no_fma)
       message(FATAL_ERROR
-        "SYCL compiler ${SYCL_COMPILER} rejects ${_sycltla_no_fma_flag}; FMA "
+        "SYCL compiler ${CMAKE_SYCL_COMPILER} rejects ${_sycltla_no_fma_flag}; FMA "
         "contraction would make FlashAttention return NaN for large inputs.")
     endif()
     list(APPEND SYCL_COMPILE_FLAGS ${_sycltla_no_fma_flag})
@@ -263,8 +257,6 @@ macro(set_build_flags)
         -Wno-error=unused-but-set-variable
         -Wno-error=uninitialized)
     endif()
-    list(APPEND SYCL_COMPILE_FLAGS ${SYCL_TARGETS_OPTION})
-    list(APPEND SYCL_DEVICE_LINK_FLAGS ${SYCL_TARGETS_OPTION})
     list(APPEND SYCL_DEVICE_LINK_FLAGS "-Xspirv-translator;-spirv-ext=+SPV_INTEL_split_barrier,+SPV_INTEL_2d_block_io,+SPV_INTEL_subgroup_matrix_multiply_accumulate")
     if(TORCH_XPU_ARCH_LIST STREQUAL "cri")
       set(SYCL_OFFLINE_COMPILER_AOT_OPTIONS "-device cri")
@@ -291,9 +283,7 @@ macro(set_build_flags)
           list(APPEND SYCL_DEVICE_LINK_FLAGS -fsycl-fp64-conv-emu)
         endif()
       endif()
-      set(SYCL_TARGETS_OPTION -fsycl-targets=spir64_gen,spir64)
-      list(APPEND SYCL_COMPILE_FLAGS ${SYCL_TARGETS_OPTION})
-      list(APPEND SYCL_DEVICE_LINK_FLAGS ${SYCL_TARGETS_OPTION})
+      set(SYCL_DEVICE_TARGETS spir64_gen spir64)
       set(SYCL_OFFLINE_COMPILER_AOT_OPTIONS "-device ${AOT_TARGETS}")
       set(TORCH_XPU_ARCH_LIST ${AOT_TARGETS} PARENT_SCOPE)
     endif()
@@ -301,7 +291,63 @@ macro(set_build_flags)
   endif()
 
   set(SYCL_OFFLINE_COMPILER_FLAGS "${SYCL_OFFLINE_COMPILER_AOT_OPTIONS}${SYCL_OFFLINE_COMPILER_CG_OPTIONS}")
+
+  # -- SYCL language flags (CMAKE_SYCL_FLAGS), used with SYCL_EXTENSION_MODE
+  # REPLACE: the host C++ flags minus those unknown to the SYCL compiler. They
+  # apply to both host and device compilation of SYCL sources.
+  separate_arguments(_sycl_cxx_flags NATIVE_COMMAND "${CMAKE_CXX_FLAGS}")
+  list(REMOVE_DUPLICATES _sycl_cxx_flags)
+  if(SYCL_HOST_FLAGS_EXCLUDED_FROM_SYCL)
+    list(REMOVE_ITEM _sycl_cxx_flags ${SYCL_HOST_FLAGS_EXCLUDED_FROM_SYCL})
+  endif()
+  list(JOIN _sycl_cxx_flags " " CMAKE_SYCL_FLAGS)
+  # Per-config host flags come from SYCL_HOST_PER_CONFIG_FLAGS, device debug
+  # flags from XPU_DEVICE_DEBUG/DEBUG_XPU. Drop CMake's per-config defaults
+  # (e.g. -O3 -DNDEBUG) so the device optimization level does not change.
+  foreach(_sycl_config DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
+    set(CMAKE_SYCL_FLAGS_${_sycl_config} "")
+  endforeach()
+  unset(_sycl_cxx_flags)
 endmacro()
+
+# Apply the SYCL flags composed by set_build_flags() to a target which
+# compiles SYCL sources. The flags in effect at call time are captured.
+function(torch_xpu_ops_sycl_target_flags target)
+  set_target_properties(${target} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    SYCL_CXX_STANDARD 20
+    SYCL_CXX_STANDARD_REQUIRED ON
+    SYCL_EXTENSIONS OFF
+    # Device code is compiled in RDC mode (the DPC++ default) and linked with
+    # the AOT compilation in a separate device link step.
+    SYCL_SEPARABLE_COMPILATION ON
+    SYCL_DEVICE_TARGETS "${SYCL_DEVICE_TARGETS}")
+  get_target_property(_type ${target} TYPE)
+  if(_type STREQUAL "STATIC_LIBRARY")
+    # Link the device code into the archive, so that consumers can link it
+    # with the host C++ linker.
+    set_target_properties(${target} PROPERTIES SYCL_RESOLVE_DEVICE_SYMBOLS ON)
+  endif()
+  target_compile_definitions(${target} PRIVATE
+    "$<$<COMPILE_LANGUAGE:SYCL>:${SYCL_DEVICE_COMPILE_DEFINITIONS}>")
+  target_compile_options(${target} PRIVATE
+    "$<$<COMPILE_LANGUAGE:SYCL>:${SYCL_COMPILE_FLAGS};${SYCL_HOST_FLAGS_ONLY_FOR_SYCL};${SYCL_HOST_PER_CONFIG_FLAGS}>")
+  # $<DEVICE_LINK:...> takes comma separated arguments, escape commas in flags
+  # such as "-device pvc,bmg".
+  set(_device_link_flags ${SYCL_DEVICE_LINK_FLAGS} -Xs "${SYCL_OFFLINE_COMPILER_FLAGS}")
+  string(REPLACE "," "$<COMMA>" _device_link_flags "${_device_link_flags}")
+  target_link_options(${target} PRIVATE "$<DEVICE_LINK:${_device_link_flags}>")
+endfunction()
+
+# Add SYCL sources to a target, compiled with the native CMake SYCL language,
+# and apply the SYCL flags in effect.
+function(torch_xpu_ops_add_sycl_sources target)
+  target_sources(${target} PRIVATE
+    FILE_SET sycl_sources TYPE SYCL
+    BASE_DIRS ${TORCH_XPU_OPS_ROOT}
+    FILES ${ARGN})
+  torch_xpu_ops_sycl_target_flags(${target})
+endfunction()
 
 # Shared options/includes/links for every torch_xpu_ops target.
 # ARGN = extra PUBLIC libs (Windows: c10_xpu torch_cpu).
@@ -318,5 +364,10 @@ function(torch_xpu_ops_finalize_targets)
     target_link_libraries(${lib}
         PUBLIC  ${SYCL_LIBRARY} ${ARGN}
         PRIVATE ATEN_XPU_FILES_GEN_LIB)
+
+    # Sources depend on generated ATen headers.
+    if(TORCH_XPU_OPS_PYTORCH_DEPS)
+      add_dependencies(${lib} ${TORCH_XPU_OPS_PYTORCH_DEPS})
+    endif()
   endforeach()
 endfunction()

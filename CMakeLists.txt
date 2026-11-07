@@ -26,6 +26,8 @@
 #  torch_xpu_ops
 #  -- Static archive library target
 
+# The native CMake SYCL language used for kernels requires CMake >= 4.5,
+# checked in cmake/SYCL.cmake.
 cmake_minimum_required(VERSION 3.27 FATAL_ERROR)
 
 # Avoid SYCL compiler error
@@ -94,10 +96,6 @@ endif()
 if(NOT TORCH_XPU_OPS_INCLUDE_DIRS)
   message("Can NOT find TORCH_XPU_OPS_INCLUDE_DIRS, require PyTorch includes ...")
   return()
-endif()
-
-if(TORCH_XPU_OPS_PYTORCH_DEPS)
-  sycl_include_external_dependencies(${TORCH_XPU_OPS_PYTORCH_DEPS})
 endif()
 
 # Only for debugging. Save building time by shrinking translation unit scope.
